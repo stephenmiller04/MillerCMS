@@ -3,8 +3,16 @@
    include('session.php');
 
    $error = "";
+   $sql = "SELECT id, name, summary FROM categories ORDER BY id ASC";
+   $result = $conn->query($sql);
+
    if($_SERVER["REQUEST_METHOD"] == "POST") {
-     $target_dir = "../img/thumbnails/";
+     $sql_id ="SELECT id+1 AS id FROM articles ORDER BY id DESC LIMIT 1";
+     $result_id = $conn->query($sql_id);
+     $row_id = $result_id->fetch_assoc();
+     $newfolder = "../img/thumbnails/" . $row_id["id"] . "/";
+     mkdir($newfolder, 0775, true);
+     $target_dir = "../img/thumbnails/" . $row_id["id"] . "/";
      $target_file = $target_dir . basename($_FILES["fileToUpload"]["name"]);
      $uploadOk = 1;
      $imageFileType = strtolower(pathinfo($target_file,PATHINFO_EXTENSION));
@@ -37,7 +45,6 @@
 
      if ($uploadOk == 0) {
          echo "Sorry, your file was not uploaded.";
-
      }
      else
      {
@@ -50,13 +57,12 @@
          }
      }
 
-
       $form_title = mysqli_real_escape_string($conn,$_POST['title']);
       $form_summary = mysqli_real_escape_string($conn,$_POST['summary']);
       $form_content = mysqli_real_escape_string($conn,$_POST['content']);
       $form_tags = mysqli_real_escape_string($conn,$_POST['tags']);
-      $form_date = date("Y-m-d H:i");
-      $form_category = 1;
+      $form_date = date("Y-m-d H:i:s");
+      $form_category = mysqli_real_escape_string($conn,$_POST['category']);
 
       if ($uploadOk == 1) {
         $sql = "INSERT INTO articles (`title`, `author`, `published`, `category`, `summary`, `content`, `thumbnail`, `tags`) VALUES ('$form_title','$login_session','$form_date',$form_category,'$form_summary','$form_content','$target_file','$form_tags')";
@@ -75,6 +81,15 @@
         <label>Title: </label><input type = "text" name = "title"/><br /><br />
         <label>Summary: </label><input type = "text" name = "summary"/><br/><br />
         <label>Content: </label><input type = "text" name = "content"/><br /><br />
+        <label>Category: </label><select name= "category">
+          <?php
+          while($row = $result->fetch_assoc()) {
+            echo "<option value=\"" . $row["id"] ."\">" . $row["name"] ."</option>";
+          }
+          ?>
+        </select>
+        <br>
+        <br>
         <label>Tags: </label><input type = "text" name = "tags"/><br/><br />
         Select image to upload:
         <input type="file" name="fileToUpload" id="fileToUpload"><br>
